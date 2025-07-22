@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 import requests
 from common.logging import configure_logging
 import structlog
+import uvicorn
 
 configure_logging()
 logger = structlog.get_logger()
@@ -53,3 +54,6 @@ async def get_status():
         'telegram_bot': telegram_status,
         'selenium_automation': selenium_status
     }
+
+logger.info("Starting uvicorn server")
+uvicorn.run(app, host="0.0.0.0", port=5001)
