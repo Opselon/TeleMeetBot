@@ -1,11 +1,12 @@
 import asyncio
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
+import database
+from selenium_automation import SeleniumAutomation
 
 class TelegramBot:
-    def __init__(self, token, app, logger):
+    def __init__(self, token, logger):
         self.token = token
-        self.app = app
         self.logger = logger
         self.application = Application.builder().token(self.token).build()
         self.application.add_handler(CommandHandler("start", self.start))
@@ -13,6 +14,7 @@ class TelegramBot:
         self.application.add_handler(CommandHandler("meet", self.meet))
         self.application.add_handler(CommandHandler("play", self.play))
         self.application.add_handler(CommandHandler("stop", self.stop))
+        self.automation = None
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
@@ -31,9 +33,12 @@ class TelegramBot:
             await update.message.reply_text("Please provide a Google Meet link.")
             return
         meet_url = context.args[0]
-        self.app.meet_url_entry.delete(0, "end")
-        self.app.meet_url_entry.insert(0, meet_url)
-        self.app.deploy_bot()
+        database.set_config('meet_url', meet_url)
+
+        if not self.automation:
+            self.automation = SeleniumAutomation(self.logger)
+
+        asyncio.create_task(self.run_automation_async(self.automation.join_meet, meet_url))
         await update.message.reply_text("Acknowledged. Attempting to join Google Meet call...")
 
     async def play(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -41,14 +46,25 @@ class TelegramBot:
             await update.message.reply_text("Please provide a YouTube video link.")
             return
         youtube_url = context.args[0]
-        self.app.youtube_url_entry.delete(0, "end")
-        self.app.youtube_url_entry.insert(0, youtube_url)
-        self.app.play_video()
+        database.set_config('youtube_url', youtube_url)
+
+        if not self.automation or not self.automation.driver:
+            await update.message.reply_text("Bot is not in a meeting. Use /meet first.")
+            return
+
+        asyncio.create_task(self.run_automation_async(self.automation.play_youtube_video, youtube_url))
+        asyncio.create_task(self.run_automation_async(self.automation.share_screen))
         await update.message.reply_text("Acknowledged. Preparing to play YouTube video...")
 
     async def stop(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        self.app.stop_bot()
+        if self.automation:
+            asyncio.create_task(self.run_automation_async(self.automation.stop_automation))
+            self.automation = None
         await update.message.reply_text("Acknowledged. Shutting down and leaving the call.")
+
+    async def run_automation_async(self, func, *args):
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, func, *args)
 
     def run(self):
         loop = asyncio.new_event_loop()
