@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 import requests
 import database
 
@@ -61,6 +61,25 @@ def stop():
     else:
         flash(f'Failed to stop automation: {response.text}', 'danger')
     return redirect(url_for('index'))
+
+@app.route('/status')
+def status():
+    try:
+        telegram_response = requests.get(f"{TELEGRAM_BOT_API_URL}/status")
+        telegram_status = telegram_response.json().get('status', 'offline')
+    except requests.exceptions.RequestException:
+        telegram_status = 'offline'
+
+    try:
+        selenium_response = requests.get(f"{SELENIUM_AUTOMATION_API_URL}/status")
+        selenium_status = selenium_response.json().get('status', 'offline')
+    except requests.exceptions.RequestException:
+        selenium_status = 'offline'
+
+    return jsonify({
+        'telegram_bot': telegram_status,
+        'selenium_automation': selenium_status
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
