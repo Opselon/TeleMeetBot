@@ -13,7 +13,7 @@ configure_logging()
 logger = structlog.get_logger()
 
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 
 TELEGRAM_BOT_API_URL = "http://telegram_bot:5002"
 SELENIUM_AUTOMATION_API_URL = "http://selenium_automation:5003"
