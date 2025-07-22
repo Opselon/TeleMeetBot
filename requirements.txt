@@ -1,5 +1,4 @@
-customtkinter
 selenium
 webdriver-manager
 python-telegram-bot
-pyinstaller
+Flask

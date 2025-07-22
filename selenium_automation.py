@@ -17,7 +17,10 @@ class SeleniumAutomation:
             chrome_options.add_argument("--disable-notifications")
             chrome_options.add_argument("--mute-audio")
             chrome_options.add_argument("--use-fake-ui-for-media-stream")
-            chrome_options.add_experimental_option("autoSelectDesktopCaptureSource", "YouTube")
+
+            # The following option is removed as it's not reliable and
+            # requires specific setup. Manual selection of the tab to share is better.
+            # chrome_options.add_experimental_option("autoSelectDesktopCaptureSource", "YouTube")
 
             service = Service(ChromeDriverManager().install())
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
@@ -29,34 +32,15 @@ class SeleniumAutomation:
 
     def join_meet(self, meet_url):
         if not self.driver:
-            self.start_driver()
+            if not self.start_driver():
+                return False
 
         self.driver.get(meet_url)
         time.sleep(5) # Allow time for the page to load
 
         try:
-            # Dismiss any initial pop-ups
-            dismiss_button = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Dismiss')]"))
-            )
-            dismiss_button.click()
-            self.logger("Dismissed initial pop-up.")
-        except:
-            self.logger("No dismiss button found, continuing...")
-
-        try:
-            # Enter a random name
-            name_input = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, "//input[@aria-label='Your name']"))
-            )
-            name_input.send_keys("ScreenShare Bot 742")
-            self.logger("Entered a random name.")
-        except:
-            self.logger("Could not find name input field.", "WARN")
-
-        try:
-            # Join the meeting
-            join_button = WebDriverWait(self.driver, 10).until(
+            # Click "Join now" or "Ask to join"
+            join_button = WebDriverWait(self.driver, 20).until(
                 EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Ask to join')] | //button[contains(., 'Join now')]"))
             )
             join_button.click()
@@ -64,17 +48,32 @@ class SeleniumAutomation:
             return True
         except Exception as e:
             self.logger(f"Could not join the meeting: {e}", "ERROR")
+            # Try to dismiss any pop-ups that might be in the way
+            try:
+                self.driver.find_element(By.XPATH, "//button[contains(text(), 'Dismiss')]").click()
+                time.sleep(2)
+                join_button.click()
+                self.logger("Successfully joined the meeting after dismissing a pop-up.")
+                return True
+            except:
+                pass # Already logged the main error
             return False
 
     def play_youtube_video(self, youtube_url):
-        self.driver.execute_script("window.open('');")
-        self.driver.switch_to.window(self.driver.window_handles[1])
-        self.driver.get(youtube_url)
-        self.logger("Opened YouTube video in a new tab.")
+        if not self.driver:
+            self.logger("Driver not started. Cannot play video.", "ERROR")
+            return
 
+        # Open YouTube in a new tab
+        self.driver.execute_script("window.open('');")
+        self.driver.switch_to.window(self.driver.window_handles[-1])
+        self.driver.get(youtube_url)
+        self.logger(f"Opened YouTube video in a new tab: {youtube_url}")
+
+        # Wait for the video to load and play it
         try:
-            play_button = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//button[@aria-label='Play (k)']"))
+            play_button = WebDriverWait(self.driver, 15).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "button.ytp-play-button"))
             )
             play_button.click()
             self.logger("Playing YouTube video.")
@@ -82,9 +81,14 @@ class SeleniumAutomation:
             self.logger(f"Could not play YouTube video: {e}", "ERROR")
 
     def share_screen(self):
-        self.driver.switch_to.window(self.driver.window_handles[0])
+        if not self.driver:
+            self.logger("Driver not started. Cannot share screen.", "ERROR")
+            return
+
+        self.driver.switch_to.window(self.driver.window_handles[0]) # Switch back to Meet tab
+
         try:
-            present_button = WebDriverWait(self.driver, 10).until(
+            present_button = WebDriverWait(self.driver, 15).until(
                 EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Present now')]"))
             )
             present_button.click()
@@ -94,11 +98,13 @@ class SeleniumAutomation:
             return
 
         try:
-            tab_option = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'A Chrome tab')]"))
+            # Select "A Chrome tab" for sharing
+            tab_option = WebDriverWait(self.driver, 15).until(
+                EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'A Chrome tab')] | //div[contains(text(), 'Chrome Tab')]"))
             )
             tab_option.click()
             self.logger("Selected 'A Chrome tab' for presentation.")
+            # Manual selection of the tab is required by the user at this point
         except Exception as e:
             self.logger(f"Could not select 'A Chrome tab': {e}", "ERROR")
 

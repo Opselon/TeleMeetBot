@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "5001:5001"
+    volumes:
+      - .:/app
+    shm_size: '2gb' # Increase shared memory size for Chrome
+  telegram-bot:
+    build: .
+    command: python -c "from telegram_bot import TelegramBot; from database import get_config, init_db; init_db(); token = get_config('telegram_token'); bot = TelegramBot(token, print); bot.run()"
+    volumes:
+      - .:/app
+    depends_on:
+      - web
