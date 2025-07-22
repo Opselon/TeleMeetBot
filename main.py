@@ -1,15 +1,21 @@
 import subprocess
 import os
+import sys
 
 def run_service(service_name):
     """Run a service as a background process."""
     log_file = f"{service_name}.log"
+    creationflags = 0
+    if sys.platform == "win32":
+        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
+
     with open(log_file, "w") as f:
         process = subprocess.Popen(
             ["python", f"services/{service_name}/main.py"],
             stdout=f,
             stderr=subprocess.STDOUT,
-            preexec_fn=os.setsid
+            creationflags=creationflags,
+            preexec_fn=None if sys.platform == "win32" else os.setsid
         )
     print(f"Service '{service_name}' started with PID {process.pid}. Log file: {log_file}")
 
