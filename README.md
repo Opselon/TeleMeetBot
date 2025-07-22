@@ -8,11 +8,12 @@ pip install -r requirements.txt
 ```
 
 ## How to run the application
-1. **Run the desired service:**
+1. **Run the main application:**
    ```
-   python main.py <service_name>
+   python main.py
    ```
-   Replace `<service_name>` with one of the following: `web_panel`, `telegram_bot`, `selenium_automation`.
+2. **If you are running the application for the first time, you will be prompted to enter your Telegram Bot Token.**
+3. **All services (`web_panel`, `telegram_bot`, `selenium_automation`) will be started automatically.**
 
 ## How to use Docker
 1. **Build and run the container:**
