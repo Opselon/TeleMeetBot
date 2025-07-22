@@ -1,5 +1,4 @@
 import subprocess
-import sys
 import os
 
 def run_service(service_name):
@@ -16,16 +15,15 @@ def run_service(service_name):
 
 def main():
     """Main function to control the services."""
-    if len(sys.argv) != 2:
-        print("Usage: python main.py <service_name>")
-        print("Available services: web_panel, telegram_bot, selenium_automation")
-        return
+    if not os.path.exists(".env"):
+        telegram_token = input("Please enter your Telegram Bot Token: ")
+        with open(".env", "w") as f:
+            f.write(f"TELEGRAM_TOKEN={telegram_token}")
+        print("Telegram Bot Token saved to .env file.")
 
-    service = sys.argv[1]
-    if service in ["web_panel", "telegram_bot", "selenium_automation"]:
+    services = ["web_panel", "telegram_bot", "selenium_automation"]
+    for service in services:
         run_service(service)
-    else:
-        print(f"Unknown service: {service}")
 
 if __name__ == "__main__":
     main()
