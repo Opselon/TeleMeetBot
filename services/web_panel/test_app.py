@@ -38,10 +38,40 @@ class TeleMeetBotTestCase(unittest.TestCase):
         self.assertEqual(self.mock_db['telegram_token'], 'test_token')
 
     def test_deploy(self):
-        response = self.app.post('/deploy', data={'meet_url': 'https://meet.google.com/test'}, follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b'Deploying bot to Google Meet.', response.data)
-        self.assertEqual(self.mock_db['meet_url'], 'https://meet.google.com/test')
+        with patch('requests.post') as mock_post:
+            mock_post.return_value.status_code = 200
+            response = self.app.post('/deploy', data={'meet_url': 'https://meet.google.com/test'}, follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(b'Deploying bot to Google Meet.', response.data)
+            self.assertEqual(self.mock_db['meet_url'], 'https://meet.google.com/test')
+
+    def test_play(self):
+        with patch('requests.post') as mock_post:
+            mock_post.return_value.status_code = 200
+            response = self.app.post('/play', data={'youtube_url': 'https://www.youtube.com/watch?v=test'}, follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(b'Playing YouTube video.', response.data)
+            self.assertEqual(self.mock_db['youtube_url'], 'https://www.youtube.com/watch?v=test')
+
+    def test_stop(self):
+        with patch('requests.post') as mock_post:
+            mock_post.return_value.status_code = 200
+            response = self.app.post('/stop', follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(b'Stopping automation and leaving the meeting.', response.data)
+
+    def test_status(self):
+        with patch('requests.get') as mock_get:
+            mock_get.side_effect = [
+                unittest.mock.Mock(status_code=200, json=lambda: {'status': 'online'}),
+                unittest.mock.Mock(status_code=200, json=lambda: {'status': 'online'})
+            ]
+            response = self.app.get('/status')
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json, {
+                'telegram_bot': 'online',
+                'selenium_automation': 'online'
+            })
 
 if __name__ == '__main__':
     unittest.main()
