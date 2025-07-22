@@ -1,16 +1,32 @@
 version: '3.8'
 services:
-  web:
-    build: .
+  web_panel:
+    build:
+      context: ./services/web_panel
     ports:
       - "5001:5001"
     volumes:
-      - .:/app
-    shm_size: '2gb' # Increase shared memory size for Chrome
-  telegram-bot:
-    build: .
-    command: python -c "from telegram_bot import TelegramBot; from database import get_config, init_db; init_db(); token = get_config('telegram_token'); bot = TelegramBot(token, print); bot.run()"
+      - ./services/web_panel:/app
+    environment:
+      - DATABASE_URL=sqlite:////app/telemeet.db
+  telegram_bot:
+    build:
+      context: ./services/telegram_bot
+    ports:
+      - "5002:5002"
     volumes:
-      - .:/app
+      - ./services/telegram_bot:/app
+    environment:
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
     depends_on:
-      - web
+      - web_panel
+  selenium_automation:
+    build:
+      context: ./services/selenium_automation
+    ports:
+      - "5003:5003"
+    volumes:
+      - ./services/selenium_automation:/app
+    shm_size: '2gb'
+    depends_on:
+      - web_panel
