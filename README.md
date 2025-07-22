@@ -8,26 +8,11 @@ pip install -r requirements.txt
 ```
 
 ## How to run the application
-1. **Initialize the database:**
+1. **Run the desired service:**
    ```
-   python -c "from database import init_db; init_db()"
+   python main.py <service_name>
    ```
-2. **Run the web panel:**
-   ```
-   python app.py
-   ```
-3. **Open your browser** and navigate to `http://localhost:5001`.
-
-4. **Configure the bot:**
-   - Enter your Telegram Bot Token and click "Save Token".
-   - Click "Connect Bot" to start the Telegram bot.
-
-5. **Control the bot via the web panel or Telegram commands:**
-   - **Web Panel:** Use the forms to deploy the bot to a Meet call, play a YouTube video, or stop the automation.
-   - **Telegram:**
-     - `/meet <google_meet_link>`: Joins the specified Google Meet call.
-     - `/play <youtube_link>`: Plays the YouTube video in the shared screen.
-     - `/stop`: Stops the video, stops the screen share, and leaves the call.
+   Replace `<service_name>` with one of the following: `web_panel`, `telegram_bot`, `selenium_automation`.
 
 ## How to use Docker
 1. **Build and run the container:**
