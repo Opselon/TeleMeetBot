@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  web_panel:
+    build:
+      context: ./services/web_panel
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./services/web_panel:/app
+    depends_on:
+      - telegram_bot
+      - selenium_automation
+
+  telegram_bot:
+    build:
+      context: ./services/telegram_bot
+    environment:
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+    volumes:
+      - ./services/telegram_bot:/app
+
+  selenium_automation:
+    build:
+      context: ./services/selenium_automation
+    ports:
+      - "5003:5003"
+    volumes:
+      - ./services/selenium_automation:/app
+    shm_size: '2gb'
