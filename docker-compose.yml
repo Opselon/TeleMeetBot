@@ -10,6 +10,7 @@ services:
     depends_on:
       - telegram_bot
       - selenium_automation
+    command: sh -c "which pip"
 
   telegram_bot:
     build:
